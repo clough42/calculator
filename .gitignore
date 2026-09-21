@@ -1,0 +1,16 @@
+# PlatformIO build files and dependencies
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc_flags
+
+# IDE files
+.vscode/.browse.c_cpp_UI.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/compile_commands.json
+.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
