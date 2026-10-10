@@ -130,8 +130,7 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
 
     for (uint8_t r = 0; r < NUM_ROWS; r++) {
-        pinMode(ROW_PINS[r], OUTPUT);
-        digitalWrite(ROW_PINS[r], HIGH);
+        pinMode(ROW_PINS[r], INPUT);
     }
 
     // External pull-ups are provided on the column lines.
@@ -142,6 +141,7 @@ void setup() {
 
 void scanKeypad() {
     for (uint8_t r = 0; r < NUM_ROWS; r++) {
+        pinMode(ROW_PINS[r], OUTPUT);
         digitalWrite(ROW_PINS[r], LOW);
         delayMicroseconds(10); // let the driven line settle before sampling
 
@@ -159,7 +159,14 @@ void scanKeypad() {
             }
         }
 
+        // Briefly drive the row high to recharge the column lines (otherwise
+        // C held in column 3 leaves the column low and rows scanned next read
+        // false presses of -, which rolls brightness down). Every other row is
+        // high-Z at this point, so this cannot fight a second closed key in the
+        // same column.
         digitalWrite(ROW_PINS[r], HIGH);
+        delayMicroseconds(10);
+        pinMode(ROW_PINS[r], INPUT);
     }
 }
 
