@@ -14,8 +14,8 @@ const uint8_t NUM_COLS = sizeof(COL_PINS) / sizeof(COL_PINS[0]);
 bool keyState[5][4];
 constexpr uint8_t kClearRow = 0;
 constexpr uint8_t kClearCol = 3;
-constexpr uint8_t kDisplayTestPointCount = Tm1638MappedFrame::kGridCount * Tm1638MappedFrame::kDigitCount;
-constexpr uint32_t kDisplayTestStepMs = 80;
+constexpr uint8_t kDisplayTestStepCount = Tm1638MappedFrame::kTestStepCount;
+constexpr uint32_t kDisplayTestStepMs = 20;
 
 // Maps each physical [row][col] position to its logical key. See README.md
 // for the keypad diagram this must stay in sync with.
@@ -90,7 +90,7 @@ void handleClearKeyAction(ClearKeyAction action, KeyInput key) {
             displayTestActive = true;
             displayTestPoint = 0;
             displayTestLastStep = millis();
-            display.renderTestPoint(displayTestPoint);
+            display.renderTestStep(displayTestPoint);
             break;
         case ClearKeyAction::StopDisplayTest:
             displayTestActive = false;
@@ -111,12 +111,10 @@ void updateDisplayTest() {
 
     displayTestLastStep = millis();
     displayTestPoint++;
-    if (displayTestPoint >= kDisplayTestPointCount) {
-        displayTestActive = false;
-        display.render(calculator.getDisplay());
-        return;
+    if (displayTestPoint >= kDisplayTestStepCount) {
+        displayTestPoint = 0;
     }
-    display.renderTestPoint(displayTestPoint);
+    display.renderTestStep(displayTestPoint);
 }
 
 void setup() {
@@ -175,4 +173,3 @@ void loop() {
     updateDisplayTest();
     delay(10);
 }
-

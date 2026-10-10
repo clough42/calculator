@@ -133,17 +133,28 @@ void test_brightness_feedback_shows_b_and_selected_level() {
     TEST_ASSERT_EQUAL_HEX16((1u << 8) | (1u << 9), frame.gridRows[6]);
 }
 
-void test_test_point_selects_exactly_one_matrix_led() {
-    for (uint8_t point = 0; point < Tm1638MappedFrame::kGridCount * Tm1638MappedFrame::kDigitCount; point++) {
-        const Tm1638MappedFrame frame = Tm1638DisplayMapping::mapTestPoint(point);
-        const uint8_t expectedColumn = point / Tm1638MappedFrame::kGridCount;
-        const uint8_t expectedGrid = point % Tm1638MappedFrame::kGridCount;
-        const uint16_t expectedColumnMask = static_cast<uint16_t>(1u << expectedColumn);
-        for (uint8_t grid = 0; grid < Tm1638MappedFrame::kGridCount; grid++) {
-            TEST_ASSERT_EQUAL_HEX16(grid == expectedGrid ? expectedColumnMask : 0, frame.gridRows[grid]);
+void test_test_step_fills_then_clears_in_reverse_order_with_external_minus_last() {
+    for (uint8_t step = 0; step < Tm1638MappedFrame::kTestStepCount; step++) {
+        const Tm1638MappedFrame frame = Tm1638DisplayMapping::mapTestStep(step);
+        const uint8_t firstLitPoint = step < Tm1638MappedFrame::kTestPointCount
+            ? 0
+            : step - Tm1638MappedFrame::kTestPointCount + 1;
+        const uint8_t lastLitPoint = step < Tm1638MappedFrame::kTestPointCount
+            ? step
+            : Tm1638MappedFrame::kTestPointCount - 1;
+        for (uint8_t point = 0; point < Tm1638MappedFrame::kTestPointCount; point++) {
+            const uint8_t mappedPoint = point == Tm1638MappedFrame::kTestPointCount - 1
+                ? point
+                : Tm1638MappedFrame::kTestPointCount - 2 - point;
+            const uint8_t column = mappedPoint / Tm1638MappedFrame::kGridCount;
+            const uint8_t grid = mappedPoint % Tm1638MappedFrame::kGridCount;
+            const uint16_t pointMask = static_cast<uint16_t>(1u << column);
+            const bool shouldBeLit = point >= firstLitPoint && point <= lastLitPoint;
+            TEST_ASSERT_EQUAL_HEX16(shouldBeLit ? pointMask : 0, frame.gridRows[grid] & pointMask);
         }
     }
-    TEST_ASSERT_EQUAL_HEX16(0, Tm1638DisplayMapping::mapTestPoint(80).gridRows[0]);
+    TEST_ASSERT_EQUAL_HEX16(0, Tm1638DisplayMapping::mapTestStep(
+        Tm1638MappedFrame::kTestStepCount).gridRows[0]);
 }
 
 int main(int argc, char** argv) {
@@ -159,6 +170,6 @@ int main(int argc, char** argv) {
     RUN_TEST(test_full_width_negative_uses_external_minus_segment);
     RUN_TEST(test_error_state_renders_err_on_rightmost_digits);
     RUN_TEST(test_brightness_feedback_shows_b_and_selected_level);
-    RUN_TEST(test_test_point_selects_exactly_one_matrix_led);
+    RUN_TEST(test_test_step_fills_then_clears_in_reverse_order_with_external_minus_last);
     return UNITY_END();
 }

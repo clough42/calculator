@@ -50,6 +50,18 @@ void packFrame(Tm1638MappedFrame& frame) {
         frame.ramBytes[grid * 2 + 1] = static_cast<uint8_t>((frame.gridRows[grid] >> 8) & 0x03);
     }
 }
+
+uint8_t mapTestSequencePoint(uint8_t point) {
+    constexpr uint8_t kExternalMinusPoint = Tm1638MappedFrame::kTestPointCount - 1;
+    return point == kExternalMinusPoint ? kExternalMinusPoint : kExternalMinusPoint - 1 - point;
+}
+
+void setTestPoint(Tm1638MappedFrame& frame, uint8_t point) {
+    const uint8_t mappedPoint = mapTestSequencePoint(point);
+    const uint8_t column = mappedPoint / Tm1638MappedFrame::kGridCount;
+    const uint8_t grid = mappedPoint % Tm1638MappedFrame::kGridCount;
+    frame.gridRows[grid] |= static_cast<uint16_t>(1u << column);
+}
 } // namespace
 
 Tm1638MappedFrame Tm1638DisplayMapping::map(const DisplayState& state) {
@@ -111,12 +123,18 @@ Tm1638MappedFrame Tm1638DisplayMapping::mapBrightness(uint8_t level) {
     return frame;
 }
 
-Tm1638MappedFrame Tm1638DisplayMapping::mapTestPoint(uint8_t point) {
+Tm1638MappedFrame Tm1638DisplayMapping::mapTestStep(uint8_t step) {
     Tm1638MappedFrame frame;
-    if (point < Tm1638MappedFrame::kGridCount * Tm1638MappedFrame::kDigitCount) {
-        const uint8_t column = point / Tm1638MappedFrame::kGridCount;
-        const uint8_t grid = point % Tm1638MappedFrame::kGridCount;
-        frame.gridRows[grid] = static_cast<uint16_t>(1u << column);
+    if (step < Tm1638MappedFrame::kTestStepCount) {
+        const uint8_t firstLitPoint = step < Tm1638MappedFrame::kTestPointCount
+            ? 0
+            : step - Tm1638MappedFrame::kTestPointCount + 1;
+        const uint8_t lastLitPoint = step < Tm1638MappedFrame::kTestPointCount
+            ? step
+            : Tm1638MappedFrame::kTestPointCount - 1;
+        for (uint8_t point = firstLitPoint; point <= lastLitPoint; point++) {
+            setTestPoint(frame, point);
+        }
     }
     packFrame(frame);
     return frame;

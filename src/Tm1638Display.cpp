@@ -47,8 +47,8 @@ void Tm1638Display::renderBrightness() {
     renderFrame(Tm1638DisplayMapping::mapBrightness(brightness_));
 }
 
-void Tm1638Display::renderTestPoint(uint8_t point) {
-    renderFrame(Tm1638DisplayMapping::mapTestPoint(point));
+void Tm1638Display::renderTestStep(uint8_t step) {
+    renderFrame(Tm1638DisplayMapping::mapTestStep(step));
 }
 
 uint8_t Tm1638Display::brightness() const {

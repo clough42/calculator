@@ -14,7 +14,7 @@ public:
     void clear();
     void render(const DisplayState& state);
     void renderBrightness();
-    void renderTestPoint(uint8_t point);
+    void renderTestStep(uint8_t step);
     void setBrightness(uint8_t brightness);
     void setEnabled(bool enabled);
     uint8_t brightness() const;

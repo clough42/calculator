@@ -67,10 +67,12 @@ Hold **C** and tap the arithmetic **+** or **−** key to change brightness one
 level at a time; `b0` through `b7` remains on the display until **C** is
 released, when the calculator display is restored. Brightness resets to its
 default after power cycling. Hold **C** and tap **=** to sweep each of the 80
-LED positions once, for 80 ms per position. It tests all eight GRID segments
-on each digit from left to right before advancing to the next digit. Releasing
-**C** stops the sweep immediately and restores the calculator display. Pressing
-and releasing **C** alone clears the calculator on release.
+LED positions in reverse order, at 20 ms per position, first turning each on and leaving it lit until
+the full display is illuminated, then turning each off in the same order. The
+external leftmost minus sign is last in both passes. The sequence repeats until
+**C** is released, then the calculator display is restored. Releasing
+**C** stops the sweep immediately. Pressing and releasing **C** alone clears
+the calculator on release.
 
 ## Portability
 
