@@ -122,6 +122,30 @@ void test_error_state_renders_err_on_rightmost_digits() {
     TEST_ASSERT_EQUAL_HEX16(1u << 7, frame.gridRows[0]);
 }
 
+void test_brightness_feedback_shows_b_and_selected_level() {
+    const Tm1638MappedFrame frame = Tm1638DisplayMapping::mapBrightness(3);
+    TEST_ASSERT_EQUAL_HEX16(1u << 9, frame.gridRows[0]);
+    TEST_ASSERT_EQUAL_HEX16(1u << 9, frame.gridRows[1]);
+    TEST_ASSERT_EQUAL_HEX16((1u << 8) | (1u << 9), frame.gridRows[2]);
+    TEST_ASSERT_EQUAL_HEX16((1u << 8) | (1u << 9), frame.gridRows[3]);
+    TEST_ASSERT_EQUAL_HEX16(1u << 8, frame.gridRows[4]);
+    TEST_ASSERT_EQUAL_HEX16(1u << 8, frame.gridRows[5]);
+    TEST_ASSERT_EQUAL_HEX16((1u << 8) | (1u << 9), frame.gridRows[6]);
+}
+
+void test_test_point_selects_exactly_one_matrix_led() {
+    for (uint8_t point = 0; point < Tm1638MappedFrame::kGridCount * Tm1638MappedFrame::kDigitCount; point++) {
+        const Tm1638MappedFrame frame = Tm1638DisplayMapping::mapTestPoint(point);
+        const uint8_t expectedColumn = point / Tm1638MappedFrame::kGridCount;
+        const uint8_t expectedGrid = point % Tm1638MappedFrame::kGridCount;
+        const uint16_t expectedColumnMask = static_cast<uint16_t>(1u << expectedColumn);
+        for (uint8_t grid = 0; grid < Tm1638MappedFrame::kGridCount; grid++) {
+            TEST_ASSERT_EQUAL_HEX16(grid == expectedGrid ? expectedColumnMask : 0, frame.gridRows[grid]);
+        }
+    }
+    TEST_ASSERT_EQUAL_HEX16(0, Tm1638DisplayMapping::mapTestPoint(80).gridRows[0]);
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -134,5 +158,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_short_negative_uses_center_segment_before_number);
     RUN_TEST(test_full_width_negative_uses_external_minus_segment);
     RUN_TEST(test_error_state_renders_err_on_rightmost_digits);
+    RUN_TEST(test_brightness_feedback_shows_b_and_selected_level);
+    RUN_TEST(test_test_point_selects_exactly_one_matrix_led);
     return UNITY_END();
 }

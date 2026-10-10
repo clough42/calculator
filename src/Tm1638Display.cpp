@@ -40,7 +40,22 @@ void Tm1638Display::clear() {
 }
 
 void Tm1638Display::render(const DisplayState& state) {
-    const Tm1638MappedFrame mapped = Tm1638DisplayMapping::map(state);
+    renderFrame(Tm1638DisplayMapping::map(state));
+}
+
+void Tm1638Display::renderBrightness() {
+    renderFrame(Tm1638DisplayMapping::mapBrightness(brightness_));
+}
+
+void Tm1638Display::renderTestPoint(uint8_t point) {
+    renderFrame(Tm1638DisplayMapping::mapTestPoint(point));
+}
+
+uint8_t Tm1638Display::brightness() const {
+    return brightness_;
+}
+
+void Tm1638Display::renderFrame(const Tm1638MappedFrame& mapped) {
     for (uint8_t i = 0; i < kRamBytes; i++) {
         frame_[i] = mapped.ramBytes[i];
     }

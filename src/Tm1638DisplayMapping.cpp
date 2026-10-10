@@ -8,6 +8,7 @@ constexpr uint8_t kSegmentD = 1u << 3;
 constexpr uint8_t kSegmentE = 1u << 4;
 constexpr uint8_t kSegmentF = 1u << 5;
 constexpr uint8_t kSegmentG = 1u << 6;
+constexpr uint8_t kLowerB = kSegmentC | kSegmentD | kSegmentE | kSegmentF | kSegmentG;
 
 constexpr uint8_t kDigitGlyphs[] = {
     kSegmentA | kSegmentB | kSegmentC | kSegmentD | kSegmentE | kSegmentF,
@@ -95,6 +96,28 @@ Tm1638MappedFrame Tm1638DisplayMapping::map(const DisplayState& state) {
         }
     }
 
+    packFrame(frame);
+    return frame;
+}
+
+Tm1638MappedFrame Tm1638DisplayMapping::mapBrightness(uint8_t level) {
+    Tm1638MappedFrame frame;
+    if (level > 7) {
+        level = 7;
+    }
+    setGlyph(frame, 8, kLowerB);
+    setGlyph(frame, 9, kDigitGlyphs[level]);
+    packFrame(frame);
+    return frame;
+}
+
+Tm1638MappedFrame Tm1638DisplayMapping::mapTestPoint(uint8_t point) {
+    Tm1638MappedFrame frame;
+    if (point < Tm1638MappedFrame::kGridCount * Tm1638MappedFrame::kDigitCount) {
+        const uint8_t column = point / Tm1638MappedFrame::kGridCount;
+        const uint8_t grid = point % Tm1638MappedFrame::kGridCount;
+        frame.gridRows[grid] = static_cast<uint16_t>(1u << column);
+    }
     packFrame(frame);
     return frame;
 }

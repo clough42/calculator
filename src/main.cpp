@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "CalculatorCore.h"
+#include "ClearKeyShortcuts.h"
 #include "Tm1638Display.h"
 
 // Row outputs (driven low one at a time, idle high)
@@ -11,6 +12,10 @@ const uint8_t NUM_ROWS = sizeof(ROW_PINS) / sizeof(ROW_PINS[0]);
 const uint8_t NUM_COLS = sizeof(COL_PINS) / sizeof(COL_PINS[0]);
 
 bool keyState[5][4];
+constexpr uint8_t kClearRow = 0;
+constexpr uint8_t kClearCol = 3;
+constexpr uint8_t kDisplayTestPointCount = Tm1638MappedFrame::kGridCount * Tm1638MappedFrame::kDigitCount;
+constexpr uint32_t kDisplayTestStepMs = 80;
 
 // Maps each physical [row][col] position to its logical key. See README.md
 // for the keypad diagram this must stay in sync with.
@@ -24,6 +29,10 @@ const KeyInput KEY_MAP[5][4] = {
 
 CalculatorCore calculator(10);
 Tm1638Display display(3);
+ClearKeyShortcuts clearKeyShortcuts;
+bool displayTestActive = false;
+uint8_t displayTestPoint = 0;
+uint32_t displayTestLastStep = 0;
 
 void printDisplay() {
     DisplayState state = calculator.getDisplay();
@@ -47,6 +56,67 @@ void printDisplay() {
         out += '.';
     }
     Serial.println(out);
+}
+
+void handleClearKeyAction(ClearKeyAction action, KeyInput key) {
+    switch (action) {
+        case ClearKeyAction::ForwardKey:
+            calculator.handleKey(key);
+            printDisplay();
+            break;
+        case ClearKeyAction::ClearCalculator:
+            calculator.handleKey(KeyInput::Clear);
+            printDisplay();
+            break;
+        case ClearKeyAction::IncreaseBrightness: {
+            uint8_t level = display.brightness();
+            if (level < 7) {
+                level++;
+            }
+            display.setBrightness(level);
+            display.renderBrightness();
+            break;
+        }
+        case ClearKeyAction::DecreaseBrightness: {
+            uint8_t level = display.brightness();
+            if (level > 0) {
+                level--;
+            }
+            display.setBrightness(level);
+            display.renderBrightness();
+            break;
+        }
+        case ClearKeyAction::StartDisplayTest:
+            displayTestActive = true;
+            displayTestPoint = 0;
+            displayTestLastStep = millis();
+            display.renderTestPoint(displayTestPoint);
+            break;
+        case ClearKeyAction::StopDisplayTest:
+            displayTestActive = false;
+            display.render(calculator.getDisplay());
+            break;
+        case ClearKeyAction::RestoreCalculatorDisplay:
+            display.render(calculator.getDisplay());
+            break;
+        case ClearKeyAction::Ignore:
+            break;
+    }
+}
+
+void updateDisplayTest() {
+    if (!displayTestActive || millis() - displayTestLastStep < kDisplayTestStepMs) {
+        return;
+    }
+
+    displayTestLastStep = millis();
+    displayTestPoint++;
+    if (displayTestPoint >= kDisplayTestPointCount) {
+        displayTestActive = false;
+        display.render(calculator.getDisplay());
+        return;
+    }
+    display.renderTestPoint(displayTestPoint);
 }
 
 void setup() {
@@ -81,8 +151,10 @@ void scanKeypad() {
                 keyState[r][c] = pressed;
                 Serial.printf("Key [row %u, col %u] %s\n", r, c, pressed ? "pressed" : "released");
                 if (pressed) {
-                    calculator.handleKey(KEY_MAP[r][c]);
-                    printDisplay();
+                    const KeyInput key = KEY_MAP[r][c];
+                    handleClearKeyAction(clearKeyShortcuts.keyPressed(key), key);
+                } else if (r == kClearRow && c == kClearCol) {
+                    handleClearKeyAction(clearKeyShortcuts.clearKeyReleased(), KeyInput::Clear);
                 }
             }
         }
@@ -93,6 +165,7 @@ void scanKeypad() {
 
 void loop() {
     scanKeypad();
+    updateDisplayTest();
     delay(10);
 }
 

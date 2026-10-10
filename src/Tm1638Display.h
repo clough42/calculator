@@ -13,8 +13,11 @@ public:
     void begin();
     void clear();
     void render(const DisplayState& state);
+    void renderBrightness();
+    void renderTestPoint(uint8_t point);
     void setBrightness(uint8_t brightness);
     void setEnabled(bool enabled);
+    uint8_t brightness() const;
 
 private:
     static constexpr uint8_t kStrobePin = 17;
@@ -31,4 +34,5 @@ private:
     void writeCommand(uint8_t command);
     void writeFrame();
     void writeDisplayControl();
+    void renderFrame(const Tm1638MappedFrame& mapped);
 };

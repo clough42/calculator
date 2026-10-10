@@ -16,4 +16,6 @@ struct Tm1638MappedFrame {
 class Tm1638DisplayMapping {
 public:
     static Tm1638MappedFrame map(const DisplayState& state);
+    static Tm1638MappedFrame mapBrightness(uint8_t level);
+    static Tm1638MappedFrame mapTestPoint(uint8_t point);
 };

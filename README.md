@@ -63,6 +63,15 @@ use, the rightmost `h` channel drives the separate minus segment instead. A
 decimal point is not rendered on the rightmost digit. Brightness defaults to
 level 3 and can be changed from 0 to 7.
 
+Hold **C** and tap the arithmetic **+** or **−** key to change brightness one
+level at a time; `b0` through `b7` remains on the display until **C** is
+released, when the calculator display is restored. Brightness resets to its
+default after power cycling. Hold **C** and tap **=** to sweep each of the 80
+LED positions once, for 80 ms per position. It tests all eight GRID segments
+on each digit from left to right before advancing to the next digit. Releasing
+**C** stops the sweep immediately and restores the calculator display. Pressing
+and releasing **C** alone clears the calculator on release.
+
 ## Portability
 
 `CalculatorCore.h`/`.cpp` intentionally avoid any Arduino/hardware
@@ -72,8 +81,8 @@ and runs both on the Pico and natively on a development workstation.
 
 ## Testing
 
-Calculator and display-mapping unit tests run natively on the workstation (no
-Pico required):
+Calculator, shortcut-state, and display-mapping unit tests run natively on the
+workstation (no Pico required):
 
 ```
 pio test -e native
