@@ -198,6 +198,15 @@ void test_configurable_digit_count() {
     assertDisplay(calc.getDisplay(), "8");
 }
 
+void test_ten_digit_display_capacity() {
+    CalculatorCore calc(10);
+    pressDigits(calc, "1234567890");
+
+    const DisplayState state = calc.getDisplay();
+    TEST_ASSERT_EQUAL_UINT8(10, state.digitCount);
+    assertDisplay(state, "1234567890");
+}
+
 void test_overflow_beyond_digit_capacity_sets_error() {
     CalculatorCore calc(3); // max representable magnitude is < 1000
     pressDigits(calc, "999");
@@ -224,6 +233,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_mrc_tap_tap_clears_memory);
     RUN_TEST(test_mrc_toggle_disarmed_by_other_key);
     RUN_TEST(test_configurable_digit_count);
+    RUN_TEST(test_ten_digit_display_capacity);
     RUN_TEST(test_overflow_beyond_digit_capacity_sets_error);
     return UNITY_END();
 }

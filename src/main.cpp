@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "CalculatorCore.h"
+#include "Tm1638Display.h"
 
 // Row outputs (driven low one at a time, idle high)
 const uint8_t ROW_PINS[] = {2, 3, 4, 5, 6};
@@ -21,10 +22,12 @@ const KeyInput KEY_MAP[5][4] = {
     {KeyInput::Digit0, KeyInput::Decimal, KeyInput::Equals, KeyInput::Add},
 };
 
-CalculatorCore calculator(8);
+CalculatorCore calculator(10);
+Tm1638Display display(3);
 
 void printDisplay() {
     DisplayState state = calculator.getDisplay();
+    display.render(state);
     if (state.error) {
         Serial.println("Error");
         return;
@@ -46,6 +49,9 @@ void printDisplay() {
 void setup() {
     // Initialize Serial communications
     Serial.begin(115200);
+
+    display.begin();
+    display.render(calculator.getDisplay());
 
     // Initialize onboard LED
     pinMode(LED_BUILTIN, OUTPUT);

@@ -36,6 +36,7 @@ instance at startup and interacts with it through two methods only:
 Behavior notes:
 - Display digit count is configurable at construction (`CalculatorCore(uint8_t
   numDigits = 8)`).
+- The application configures ten digits to match the TM1638 display.
 - Internal arithmetic uses `double`.
 - Operators chain like a standard calculator (`2 + 3 + 4 =` computes `2+3=5`
   immediately, then `5+4=9`).
@@ -44,6 +45,21 @@ Behavior notes:
 - Typing more digits than the configured width allows is silently ignored.
 - Divide-by-zero or results too large to display set an error state; all keys
   except `C` are ignored until cleared.
+
+## TM1638 Display
+
+`Tm1638Display` drives the custom 10-digit, 8-segment matrix using SPI0:
+
+- STB: GP17
+- CLK: GP18
+- DIO: GP19
+
+The pure display mapper transposes digit glyphs into the eight GRID scan rows
+and ten SEG output columns. Negative values use the center segment in the blank
+position immediately before the number; when all ten digit positions are in
+use, the rightmost `h` channel drives the separate minus segment instead. A
+decimal point is not rendered on the rightmost digit. Brightness defaults to
+level 3 and can be changed from 0 to 7.
 
 ## Portability
 
@@ -54,7 +70,8 @@ and runs both on the Pico and natively on a development workstation.
 
 ## Testing
 
-Unit tests run natively on the workstation (no Pico required):
+Calculator and display-mapping unit tests run natively on the workstation (no
+Pico required):
 
 ```
 pio test -e native
