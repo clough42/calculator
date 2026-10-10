@@ -59,7 +59,18 @@ Tm1638MappedFrame Tm1638DisplayMapping::map(const DisplayState& state) {
         return frame;
     }
 
-    const uint8_t firstColumn = Tm1638MappedFrame::kDigitCount - state.digitCount;
+    const bool pendingDecimal = state.entryInProgress && state.hasDecimalPoint &&
+        state.fractionalDigitCount == 0;
+    uint8_t firstColumn = Tm1638MappedFrame::kDigitCount - state.digitCount;
+    if (pendingDecimal) {
+        if (firstColumn == 0) {
+            mapError(frame);
+            packFrame(frame);
+            return frame;
+        }
+        firstColumn--;
+    }
+
     for (uint8_t i = 0; i < state.digitCount; i++) {
         const uint8_t digit = state.digits[i];
         if (digit <= 9) {

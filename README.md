@@ -42,6 +42,8 @@ Behavior notes:
   immediately, then `5+4=9`).
 - Repeated `=` presses repeat the last operator/operand against the current
   value.
+- During entry, the decimal point and typed fractional zeros remain visible;
+  calculated results normalize trailing fractional zeros.
 - Typing more digits than the configured width allows is silently ignored.
 - Divide-by-zero or results too large to display set an error state; all keys
   except `C` are ignored until cleared.

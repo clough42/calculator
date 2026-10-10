@@ -91,6 +91,7 @@ void CalculatorCore::handleDigit(uint8_t digit) {
         fractionDigitCount_ = 0;
         decimalEntered_ = false;
         enteringNewNumber_ = false;
+        entryInProgress_ = true;
     }
 
     if (enteredDigitCount_ >= numDigits_) {
@@ -98,6 +99,13 @@ void CalculatorCore::handleDigit(uint8_t digit) {
     }
 
     if (decimalEntered_) {
+        uint8_t intDigits = 1;
+        if (displayValue_ >= 1.0) {
+            intDigits = static_cast<uint8_t>(std::floor(std::log10(displayValue_))) + 1;
+        }
+        if (intDigits + fractionDigitCount_ >= numDigits_) {
+            return; // preserve one display position for the implicit integer zero
+        }
         fractionDigitCount_++;
         displayValue_ += digit / std::pow(10.0, fractionDigitCount_);
     } else {
@@ -122,6 +130,7 @@ void CalculatorCore::handleDecimal() {
         return; // no room left for a fractional part
     }
     decimalEntered_ = true;
+    entryInProgress_ = true;
 }
 
 void CalculatorCore::handleOperator(Operator op) {
@@ -140,6 +149,7 @@ void CalculatorCore::handleOperator(Operator op) {
     pendingOperator_ = op;
     hasLastOperation_ = false;
     enteringNewNumber_ = true;
+    entryInProgress_ = false;
 }
 
 void CalculatorCore::handleEquals() {
@@ -166,6 +176,7 @@ void CalculatorCore::handleEquals() {
     displayValue_ = result;
     pendingOperator_ = Operator::None;
     enteringNewNumber_ = true;
+    entryInProgress_ = false;
 }
 
 void CalculatorCore::handleClear() {
@@ -176,6 +187,7 @@ void CalculatorCore::handleClear() {
     lastOperator_ = Operator::None;
     hasLastOperation_ = false;
     enteringNewNumber_ = true;
+    entryInProgress_ = false;
     decimalEntered_ = false;
     enteredDigitCount_ = 0;
     fractionDigitCount_ = 0;
@@ -187,11 +199,13 @@ void CalculatorCore::handleClear() {
 void CalculatorCore::handleMemAdd() {
     memoryValue_ += displayValue_;
     enteringNewNumber_ = true;
+    entryInProgress_ = false;
 }
 
 void CalculatorCore::handleMemSubtract() {
     memoryValue_ -= displayValue_;
     enteringNewNumber_ = true;
+    entryInProgress_ = false;
 }
 
 void CalculatorCore::handleMemRecallClear() {
@@ -203,6 +217,7 @@ void CalculatorCore::handleMemRecallClear() {
     }
     displayValue_ = memoryValue_;
     enteringNewNumber_ = true;
+    entryInProgress_ = false;
     decimalEntered_ = false;
     enteredDigitCount_ = 0;
     fractionDigitCount_ = 0;
@@ -267,7 +282,7 @@ DisplayState CalculatorCore::getDisplay() const {
         return state;
     }
 
-    uint8_t fracDigits = numDigits_ - intDigits;
+    uint8_t fracDigits = entryInProgress_ ? fractionDigitCount_ : numDigits_ - intDigits;
     double scale = std::pow(10.0, fracDigits);
     double scaledValue = std::round(magnitude * scale);
 
@@ -290,7 +305,7 @@ DisplayState CalculatorCore::getDisplay() const {
         negative = false; // avoid displaying "-0"
     }
 
-    while (fracDigits > 0 && (scaledInt % 10) == 0) {
+    while (!entryInProgress_ && fracDigits > 0 && (scaledInt % 10) == 0) {
         scaledInt /= 10;
         fracDigits--;
     }
@@ -305,8 +320,10 @@ DisplayState CalculatorCore::getDisplay() const {
         state.digits[i] = static_cast<uint8_t>((scaledInt / divisor) % 10);
     }
 
-    state.hasDecimalPoint = fracDigits > 0;
+    state.hasDecimalPoint = entryInProgress_ ? decimalEntered_ : fracDigits > 0;
     state.decimalPointPosition = intDigits;
+    state.entryInProgress = entryInProgress_;
+    state.fractionalDigitCount = entryInProgress_ ? fractionDigitCount_ : 0;
     state.negative = negative;
     state.error = false;
     return state;

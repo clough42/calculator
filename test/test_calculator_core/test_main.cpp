@@ -43,6 +43,9 @@ void assertDisplay(const DisplayState& state, const char* expected) {
         }
         rendered[pos++] = static_cast<char>('0' + state.digits[i]);
     }
+    if (state.hasDecimalPoint && state.decimalPointPosition == state.digitCount) {
+        rendered[pos++] = '.';
+    }
     rendered[pos] = '\0';
 
     // Compare numerically-equivalent strings by trimming leading zeros in the
@@ -94,6 +97,77 @@ void test_decimal_entry() {
     pressDigits(calc, "2.25");
     calc.handleKey(KeyInput::Equals);
     assertDisplay(calc.getDisplay(), "3.75");
+}
+
+void test_pending_decimal_is_included_in_display_state() {
+    CalculatorCore calc(10);
+    pressDigits(calc, "1.");
+
+    const DisplayState state = calc.getDisplay();
+    TEST_ASSERT_TRUE(state.entryInProgress);
+    TEST_ASSERT_TRUE(state.hasDecimalPoint);
+    TEST_ASSERT_EQUAL_UINT8(0, state.fractionalDigitCount);
+    assertDisplay(state, "1.");
+}
+
+void test_initial_decimal_displays_zero_and_point() {
+    CalculatorCore calc(10);
+    pressDigits(calc, ".");
+
+    const DisplayState state = calc.getDisplay();
+    TEST_ASSERT_TRUE(state.hasDecimalPoint);
+    TEST_ASSERT_EQUAL_UINT8(1, state.digitCount);
+    assertDisplay(state, "0.");
+}
+
+void test_fractional_trailing_zeroes_remain_visible_during_entry() {
+    CalculatorCore calc(10);
+    pressDigits(calc, "1.00");
+
+    DisplayState state = calc.getDisplay();
+    TEST_ASSERT_EQUAL_UINT8(2, state.fractionalDigitCount);
+    assertDisplay(state, "1.00");
+
+    calc.handleKey(KeyInput::Digit3);
+    state = calc.getDisplay();
+    TEST_ASSERT_EQUAL_UINT8(3, state.fractionalDigitCount);
+    assertDisplay(state, "1.003");
+}
+
+void test_second_decimal_point_is_ignored_without_losing_entry() {
+    CalculatorCore calc(10);
+    pressDigits(calc, "1.0");
+    calc.handleKey(KeyInput::Decimal);
+    calc.handleKey(KeyInput::Digit0);
+
+    const DisplayState state = calc.getDisplay();
+    TEST_ASSERT_EQUAL_UINT8(2, state.fractionalDigitCount);
+    assertDisplay(state, "1.00");
+}
+
+void test_fractional_trailing_zeroes_normalize_after_calculation() {
+    CalculatorCore calc(10);
+    pressDigits(calc, "1.00");
+    calc.handleKey(KeyInput::Add);
+    pressDigits(calc, "0");
+    calc.handleKey(KeyInput::Equals);
+
+    const DisplayState state = calc.getDisplay();
+    TEST_ASSERT_FALSE(state.entryInProgress);
+    assertDisplay(state, "1");
+}
+
+void test_pending_decimal_respects_ten_digit_capacity() {
+    CalculatorCore full(10);
+    pressDigits(full, "1234567890.");
+    TEST_ASSERT_FALSE(full.getDisplay().hasDecimalPoint);
+    assertDisplay(full.getDisplay(), "1234567890");
+
+    CalculatorCore roomForFraction(10);
+    pressDigits(roomForFraction, "123456789.");
+    assertDisplay(roomForFraction.getDisplay(), "123456789.");
+    roomForFraction.handleKey(KeyInput::Digit0);
+    assertDisplay(roomForFraction.getDisplay(), "123456789.0");
 }
 
 void test_negative_result() {
@@ -224,6 +298,12 @@ int main(int argc, char** argv) {
     RUN_TEST(test_chained_operations);
     RUN_TEST(test_repeated_equals_repeats_last_operation);
     RUN_TEST(test_decimal_entry);
+    RUN_TEST(test_pending_decimal_is_included_in_display_state);
+    RUN_TEST(test_initial_decimal_displays_zero_and_point);
+    RUN_TEST(test_fractional_trailing_zeroes_remain_visible_during_entry);
+    RUN_TEST(test_second_decimal_point_is_ignored_without_losing_entry);
+    RUN_TEST(test_fractional_trailing_zeroes_normalize_after_calculation);
+    RUN_TEST(test_pending_decimal_respects_ten_digit_capacity);
     RUN_TEST(test_negative_result);
     RUN_TEST(test_divide_by_zero_sets_error);
     RUN_TEST(test_clear_recovers_from_error_but_keeps_memory);

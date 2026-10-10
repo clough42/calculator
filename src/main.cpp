@@ -43,6 +43,9 @@ void printDisplay() {
         }
         out += static_cast<char>('0' + state.digits[i]);
     }
+    if (state.hasDecimalPoint && state.decimalPointPosition == state.digitCount) {
+        out += '.';
+    }
     Serial.println(out);
 }
 

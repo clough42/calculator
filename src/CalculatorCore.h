@@ -48,6 +48,10 @@ struct DisplayState {
     uint8_t decimalPointPosition = 0;
     bool hasDecimalPoint = false;
 
+    // Entry metadata preserves a pending decimal point and typed fractional zeros.
+    bool entryInProgress = false;
+    uint8_t fractionalDigitCount = 0;
+
     bool negative = false;
     bool error = false;
 };
@@ -86,6 +90,7 @@ private:
     double memoryValue_ = 0.0;
 
     bool enteringNewNumber_ = true; // next digit/decimal starts a fresh number
+    bool entryInProgress_ = false;
     bool decimalEntered_ = false;
     uint8_t enteredDigitCount_ = 0; // digits typed so far for the current entry
     uint8_t fractionDigitCount_ = 0;
